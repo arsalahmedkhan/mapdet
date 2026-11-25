@@ -37,7 +37,7 @@
   <div id="side">
     <h1>Hamtramck Sanborn 1949-1951</h1>
     <div class="muted">Draft building layer on the stitched map</div>
-    <div class="banner"><b>Work in progress - window 1 only.</b> This is a sample draft, not a finished product, and it has not been checked by a person. Treat it as a starting point for students to correct.</div>
+    <div class="banner"><b>Work in progress - window 1 only.</b> This is a draft that has not been checked yet. Treat it as a starting point for students to correct.</div>
     <fieldset><legend>Layers</legend>
       <label><input type="checkbox" id="ldraft" checked> Draft outlines (<span id="ndraft"></span>)</label>
       <label><input type="checkbox" id="lpts" checked> Centroid points (one dot per building)</label>
@@ -49,8 +49,8 @@
     <fieldset><legend>Colour outlines by</legend>
       <label><input type="radio" name="mode" value="num" checked> Number status</label>
       <label><input type="radio" name="mode" value="src"> Where the number came from</label>
-      <label><input type="radio" name="mode" value="conf"> Detection confidence</label>
-      <label><input type="radio" name="mode" value="mat"> Material guess</label>
+      <label><input type="radio" name="mode" value="conf"> Outline confidence</label>
+      <label><input type="radio" name="mode" value="mat"> Material (draft)</label>
       <div id="legend" class="muted" style="margin-top:6px"></div>
     </fieldset>
     <fieldset><legend>Go to</legend>
@@ -60,7 +60,7 @@
     <fieldset><legend>Selected building</legend>
       <div id="info" class="muted">Click an outline to see its details.</div>
     </fieldset>
-    <div class="muted">Drag to move, wheel or the + and - buttons to zoom. Numbers appear when you zoom in. Draft outlines come from the colour-rule + SAM step; numbers come from the sharp Library of Congress sheets where one could be lined up, and otherwise from the sharp level-20 map tiles (window 1 only for now). Zoom in far enough and the sharp tiles replace the soft map.</div>
+    <div class="muted">Drag to move, wheel or the + and - buttons to zoom. Numbers appear when you zoom in. Numbers come from the sharp Library of Congress sheets where one could be lined up, and otherwise from the sharp level-20 map tiles (window 1 only for now). Zoom in far enough and the sharp tiles replace the soft map.</div>
   </div>
   <div id="stage">
     <canvas id="cv"></canvas>
@@ -156,12 +156,11 @@
     h+='<div><b>Street (draft)</b> '+(b.st?esc(b.st.toLowerCase().replace(/\b\w/g,function(c){return c.toUpperCase();}))+(b.sk?' <span class="muted">(check)</span>':''):'not read'+(b.sm?' <span class="muted">('+esc(b.sm)+')</span>':''))+'</div>';
     if(b.n && b.st) h+='<div><b>Draft address</b> '+esc(b.n)+' '+esc(b.st.toLowerCase().replace(/\b\w/g,function(c){return c.toUpperCase();}))+(b.ck||b.sk?' <span class="muted">(check)</span>':'')+'</div>';
     if(b.n){h+='<div><b>Number confidence</b> '+b.nc+'</div><div><b>Needs check</b> '+(b.ck?'yes':'no')+'</div>';}
-    if(b.vc) h+='<div><b>Vision model said</b> '+esc(b.vc)+' <span class="muted">(extra, unproven)</span></div>';
-    h+='<div><b>Detection confidence</b> '+b.cf+'</div><div><b>Area</b> '+b.a+' m&sup2;</div>';
-    h+='<div><b>Material guess</b> '+(b.mt?esc(b.mt)+' ('+b.mc+')':'none')+'</div><div><b>Window</b> '+b.w+'</div>';
+    h+='<div><b>Outline confidence</b> '+b.cf+'</div><div><b>Area</b> '+b.a+' m&sup2;</div>';
+    h+='<div><b>Material (draft)</b> '+(b.mt?esc(b.mt)+' ('+b.mc+')':'none')+'</div><div><b>Window</b> '+b.w+'</div>';
     if(b.n && b.ns==='sheet') h+='<div><b>Number read from</b> sheet '+esc(b.sh.replace('03985_',''))+'</div>';
     if(b.n && b.ns==='tile') h+='<div><b>Number read from</b> sharp map tiles (level 20), read '+b.rt+' time(s)</div>';
-    h+='<div><b>Status</b> draft, not yet checked</div>'; document.getElementById('info').innerHTML=h;
+    h+='<div><b>Status</b> Draft, not checked yet</div>'; document.getElementById('info').innerHTML=h;
   }
   function showHand(h){
     var s='<div><b>Hand-made building</b> (answer key)</div><div><b>House numbers</b> '+(h.nums.length?esc(h.nums.join(', ')):'none')+'</div><div><b>Street</b> '+esc(h.street)+'</div><div><b>Type</b> '+esc(h.type)+'</div><div><b>Stories</b> '+esc(h.stories)+'</div><div><b>Main material</b> '+esc(h.mat)+'</div>';
