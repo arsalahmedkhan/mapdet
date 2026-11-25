@@ -37,7 +37,7 @@
   <div id="side">
     <h1>Hamtramck Sanborn 1949-1951</h1>
     <div class="muted">Draft building layer on the stitched map</div>
-    <div class="banner"><b>Work in progress - window 1 only.</b> This is a sample of an AI draft, not a finished product. Every outline, number and street here was found by software and has not been checked by a person. Treat it as a starting point for students to correct.</div>
+    <div class="banner"><b>Work in progress - window 1 only.</b> This is a sample draft, not a finished product, and it has not been checked by a person. Treat it as a starting point for students to correct.</div>
     <fieldset><legend>Layers</legend>
       <label><input type="checkbox" id="ldraft" checked> Draft outlines (<span id="ndraft"></span>)</label>
       <label><input type="checkbox" id="lpts" checked> Centroid points (one dot per building)</label>
@@ -161,7 +161,7 @@
     h+='<div><b>Material guess</b> '+(b.mt?esc(b.mt)+' ('+b.mc+')':'none')+'</div><div><b>Window</b> '+b.w+'</div>';
     if(b.n && b.ns==='sheet') h+='<div><b>Number read from</b> sheet '+esc(b.sh.replace('03985_',''))+'</div>';
     if(b.n && b.ns==='tile') h+='<div><b>Number read from</b> sharp map tiles (level 20), read '+b.rt+' time(s)</div>';
-    h+='<div><b>Source</b> AI draft</div>'; document.getElementById('info').innerHTML=h;
+    h+='<div><b>Status</b> draft, not yet checked</div>'; document.getElementById('info').innerHTML=h;
   }
   function showHand(h){
     var s='<div><b>Hand-made building</b> (answer key)</div><div><b>House numbers</b> '+(h.nums.length?esc(h.nums.join(', ')):'none')+'</div><div><b>Street</b> '+esc(h.street)+'</div><div><b>Type</b> '+esc(h.type)+'</div><div><b>Stories</b> '+esc(h.stories)+'</div><div><b>Main material</b> '+esc(h.mat)+'</div>';

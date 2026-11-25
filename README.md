@@ -1,6 +1,6 @@
 ﻿# Hamtramck Sanborn map 1949-1951: window 1 viewer (work in progress)
 
-An offline map viewer for one area ("window 1") of the 1949-1951 Sanborn fire-insurance map of Hamtramck, Michigan, with a **draft building layer found by software**. It has not been checked by people. Treat it as a starting point for students to correct.
+An offline map viewer for one area ("window 1") of the 1949-1951 Sanborn fire-insurance map of Hamtramck, Michigan, with a **draft building layer**. It has not been checked by people. Treat it as a starting point for students to correct.
 
 ## How to open
 1. Download this repository (green **Code** button, then **Download ZIP**) and unzip it, or clone it.
@@ -12,7 +12,7 @@ An offline map viewer for one area ("window 1") of the 1949-1951 Sanborn fire-in
 - **House numbers** read from the sharp Library of Congress sheets and the sharp map tiles, and a **draft street** (nearest OpenStreetMap street line).
 - A material guess (from the fill colour).
 - Optional: the **hand-made buildings** from the Michigan Tech project, to compare with the draft.
-- Click a building for its details. "(check)" means the software is unsure.
+- Click a building for its details. "(check)" means the draft is unsure.
 
 ## How good is it? (window 1, compared with the hand-made buildings)
 - Finds about two thirds of the hand-made buildings (centre point within 5 m).
@@ -25,3 +25,4 @@ An offline map viewer for one area ("window 1") of the 1949-1951 Sanborn fire-in
 - Street lines: (c) OpenStreetMap contributors (ODbL).
 
 No pupil data is in this repository. Draft layer: work in progress.
+
