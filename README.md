@@ -12,6 +12,7 @@ An offline map viewer for one area ("window 1") of the 1949-1951 Sanborn fire-in
 - **House numbers** read from the sharp Library of Congress sheets and the sharp map tiles, and a **draft street** (nearest OpenStreetMap street line).
 - A material guess (from the fill colour).
 - Optional: the **hand-made buildings** from the Michigan Tech project, to compare with the draft.
+- **Review mode** (tick it in the left panel): students can correct a building's house number or street, mark it right or wrong, add a missing building, and download their corrections as a CSV. Corrections are saved in the reader's own browser.
 - Click a building for its details. "(check)" means the draft is unsure.
 
 ## How good is it? (window 1, compared with the hand-made buildings)
@@ -25,4 +26,5 @@ An offline map viewer for one area ("window 1") of the 1949-1951 Sanborn fire-in
 - Street lines: (c) OpenStreetMap contributors (ODbL).
 
 No pupil data is in this repository. Draft layer: work in progress.
+
 

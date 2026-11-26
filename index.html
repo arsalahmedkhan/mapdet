@@ -60,6 +60,17 @@
     <fieldset><legend>Selected building</legend>
       <div id="info" class="muted">Click an outline to see its details.</div>
     </fieldset>
+    <fieldset><legend>Review (students)</legend>
+      <label><input type="checkbox" id="lrev"> Review mode: correct buildings and save</label>
+      <div id="revbox" style="display:none">
+        <div class="muted" style="margin:4px 0">Your initials: <input type="text" id="revname" style="width:90px"></div>
+        <div id="revform" class="muted">Click a building, then fix it here.</div>
+        <div style="margin-top:8px"><button id="addmiss">Add a missing building (click map)</button> <button id="revundo">Undo last added</button></div>
+        <div class="muted" id="revcount" style="margin:6px 0"></div>
+        <div><button id="revexp">Download my corrections (CSV)</button> <button id="revclr">Clear all</button></div>
+        <div class="muted" style="margin-top:6px">Corrections are saved in this browser. Download the CSV and send it to the project team.</div>
+      </div>
+    </fieldset>
     <div class="muted">Drag to move, wheel or the + and - buttons to zoom. Numbers appear when you zoom in. Numbers come from the sharp Library of Congress sheets where one could be lined up, and otherwise from the sharp level-20 map tiles (window 1 only for now). Zoom in far enough and the sharp tiles replace the soft map.</div>
   </div>
   <div id="stage">
@@ -74,7 +85,12 @@
   var cv=document.getElementById('cv'), ctx=cv.getContext('2d'), stage=document.getElementById('stage');
   var MW=META.width, MH=META.height, TS=META.tile, NL=META.levels;
   var view={x:0,y:0,s:0.1}, dpr=window.devicePixelRatio||1, sel=null, selHand=null;
-  var opt={draft:true,pts:true,num:true,hand:false,win:true,onlycheck:false,mode:'num'};
+  var opt={draft:true,pts:true,num:true,hand:false,win:true,onlycheck:false,mode:'num',review:false};
+  // review mode state (kept in this browser only)
+  var KEY='hamtramck_review_v1', corr={}, missing=[], addMode=false;
+  var REVCOL={'right':'#0d47a1','fixed':'#00838f','wrong':'#b71c1c','unsure':'#6a1b9a'};
+  try{var sv=JSON.parse(localStorage.getItem(KEY)||'null'); if(sv){corr=sv.corr||{};missing=sv.missing||[];}}catch(e){}
+  function persist(){try{localStorage.setItem(KEY,JSON.stringify({corr:corr,missing:missing}));}catch(e){}}
   document.getElementById('ndraft').textContent=DRAFT.length; document.getElementById('nhand').textContent=HAND.length;
   // bounding boxes for quick culling
   function bbox(r){var a=1e9,b=1e9,c=-1e9,d=-1e9;for(var i=0;i<r.length;i++){var p=r[i];if(p[0]<a)a=p[0];if(p[1]<b)b=p[1];if(p[0]>c)c=p[0];if(p[1]>d)d=p[1];}return [a,b,c,d];}
@@ -129,21 +145,24 @@
     if(opt.hand){ctx.lineWidth=2;ctx.strokeStyle='#00acc1';ctx.setLineDash([5,3]);HAND.forEach(function(h){if(!vis(h.bb))return;h.rings.forEach(function(rg){path(rg);ctx.stroke();});});ctx.setLineDash([]);}
     if(opt.draft){
       ctx.lineWidth=Math.max(1.2,Math.min(2.5,view.s*3));
+      var lw0=Math.max(1.2,Math.min(2.5,view.s*3));
       DRAFT.forEach(function(b){ if(!vis(b.bb))return; if(opt.onlycheck && !(b.ck && b.n) ) return; if(!b.r.length){return;}
-        ctx.strokeStyle=colourFor(b); path(b.r); ctx.stroke(); });
+        var rc=corr[b.id]; ctx.lineWidth=rc?lw0+2:lw0; ctx.strokeStyle=rc?REVCOL[rc.status]:colourFor(b); path(b.r); ctx.stroke(); });
       if(sel){ctx.lineWidth=4;ctx.strokeStyle='#000';path(sel.r);ctx.stroke();ctx.lineWidth=2.5;ctx.strokeStyle='#fff';path(sel.r);ctx.stroke();}
     }
     if(opt.pts){
       var rad=Math.max(2.5,Math.min(7,view.s*4)); ctx.lineWidth=1.5;
       DRAFT.forEach(function(b){ if(!vis(b.bb))return; if(opt.onlycheck && !(b.ck && b.n)) return; var x=(b.c[0]-view.x)*view.s,y=(b.c[1]-view.y)*view.s;
-        ctx.beginPath();ctx.arc(x,y,rad,0,6.2832);ctx.fillStyle=colourFor(b);ctx.fill();ctx.strokeStyle='#fff';ctx.stroke();});
+        ctx.beginPath();ctx.arc(x,y,rad,0,6.2832);ctx.fillStyle=colourFor(b);ctx.fill();ctx.strokeStyle='#fff';ctx.stroke();
+        var rc=corr[b.id]; if(rc){ctx.lineWidth=3;ctx.strokeStyle=REVCOL[rc.status];ctx.beginPath();ctx.arc(x,y,rad+3,0,6.2832);ctx.stroke();ctx.lineWidth=1.5;}});
       if(sel){var sx=(sel.c[0]-view.x)*view.s,sy=(sel.c[1]-view.y)*view.s;ctx.lineWidth=3;ctx.strokeStyle='#000';ctx.beginPath();ctx.arc(sx,sy,rad+4,0,6.2832);ctx.stroke();ctx.lineWidth=1.5;ctx.strokeStyle='#fff';ctx.beginPath();ctx.arc(sx,sy,rad+4,0,6.2832);ctx.stroke();}
     }
+    missing.forEach(function(m){ var x=(m.c[0]-view.x)*view.s,y=(m.c[1]-view.y)*view.s, s=Math.max(7,Math.min(12,view.s*8)); ctx.beginPath();ctx.moveTo(x,y-s);ctx.lineTo(x+s,y);ctx.lineTo(x,y+s);ctx.lineTo(x-s,y);ctx.closePath();ctx.fillStyle='#e91e63';ctx.fill();ctx.lineWidth=2;ctx.strokeStyle='#fff';ctx.stroke(); });
     if(selHand){ctx.lineWidth=4;ctx.strokeStyle='#000';selHand.rings.forEach(function(rg){path(rg);ctx.stroke();});ctx.lineWidth=2.5;ctx.strokeStyle='#00e5ff';selHand.rings.forEach(function(rg){path(rg);ctx.stroke();});}
     if(opt.num && view.s>=0.55){
       ctx.font='bold '+Math.max(11,Math.min(18,view.s*13))+'px system-ui'; ctx.textAlign='center'; ctx.textBaseline='middle';
-      DRAFT.forEach(function(b){ if(!b.n||!vis(b.bb))return; if(opt.onlycheck && !b.ck) return; var x=(b.c[0]-view.x)*view.s,y=(b.c[1]-view.y)*view.s;
-        ctx.lineWidth=3;ctx.strokeStyle='#fffffff0';ctx.strokeText(b.n,x,y);ctx.fillStyle=b.ck?'#c25400':'#1b5e20';ctx.fillText(b.n,x,y);});
+      DRAFT.forEach(function(b){ var rc=corr[b.id]; var n=(rc&&rc.num)?rc.num:b.n; if(!n||!vis(b.bb))return; if(opt.onlycheck && !b.ck) return; var x=(b.c[0]-view.x)*view.s,y=(b.c[1]-view.y)*view.s;
+        ctx.lineWidth=3;ctx.strokeStyle='#fffffff0';ctx.strokeText(n,x,y);ctx.fillStyle=(rc&&rc.num)?'#0d47a1':(b.ck?'#c25400':'#1b5e20');ctx.fillText(n,x,y);});
       ctx.textAlign='start';ctx.textBaseline='alphabetic';
     }
   }
@@ -160,7 +179,7 @@
     h+='<div><b>Material (draft)</b> '+(b.mt?esc(b.mt)+' ('+b.mc+')':'none')+'</div><div><b>Window</b> '+b.w+'</div>';
     if(b.n && b.ns==='sheet') h+='<div><b>Number read from</b> sheet '+esc(b.sh.replace('03985_',''))+'</div>';
     if(b.n && b.ns==='tile') h+='<div><b>Number read from</b> sharp map tiles (level 20), read '+b.rt+' time(s)</div>';
-    h+='<div><b>Status</b> Draft, not checked yet</div>'; document.getElementById('info').innerHTML=h;
+    var rv=corr[b.id]; h+='<div><b>Status</b> '+(rv?('reviewed: '+esc(rv.status)+(rv.by?' by '+esc(rv.by):'')):'Draft, not checked yet')+'</div>'; document.getElementById('info').innerHTML=h; renderForm(b);
   }
   function showHand(h){
     var s='<div><b>Hand-made building</b> (answer key)</div><div><b>House numbers</b> '+(h.nums.length?esc(h.nums.join(', ')):'none')+'</div><div><b>Street</b> '+esc(h.street)+'</div><div><b>Type</b> '+esc(h.type)+'</div><div><b>Stories</b> '+esc(h.stories)+'</div><div><b>Main material</b> '+esc(h.mat)+'</div>';
@@ -177,6 +196,7 @@
     view.x=drag.vx-dx/view.s; view.y=drag.vy-dy/view.s; draw();});
   function click(e){
     var r=stage.getBoundingClientRect(); var m=s2m(e.clientX-r.left,e.clientY-r.top); var hit=null;
+    if(addMode){addMissing(m);return;}
     if(opt.draft){ for(var i=0;i<DRAFT.length;i++){var b=DRAFT[i]; if(b.r.length&&m[0]>=b.bb[0]&&m[0]<=b.bb[2]&&m[1]>=b.bb[1]&&m[1]<=b.bb[3]&&inPoly(m[0],m[1],b.r)&&(!opt.onlycheck||(b.ck&&b.n))){hit=b;break;} } }
     if(!hit && opt.pts){ var best=null,bd=1e9,lim=11/view.s; for(var k=0;k<DRAFT.length;k++){var q=DRAFT[k]; if(opt.onlycheck&&!(q.ck&&q.n))continue; var dx=q.c[0]-m[0],dy=q.c[1]-m[1]; if(Math.abs(dx)>lim||Math.abs(dy)>lim)continue; var dd=Math.hypot(dx,dy); if(dd<bd&&dd<=lim){bd=dd;best=q;}} if(best) hit=best; }
     sel=hit; selHand=null;
@@ -195,6 +215,50 @@
   function find(){var q=document.getElementById('q').value.replace(/\D/g,''); if(!q){return;} var hits=DRAFT.filter(function(b){return b.n===q;});
     document.getElementById('qr').textContent=hits.length+' found'; if(!hits.length) return; var b=hits[0]; sel=b; showDraft(b); var r=stage.getBoundingClientRect(); view.s=Math.max(view.s,1.2); view.x=b.c[0]-r.width/2/view.s; view.y=b.c[1]-r.height/2/view.s; draw();}
   document.getElementById('qb').onclick=find; document.getElementById('q').onkeydown=function(e){if(e.key==='Enter')find();};
+  // ---- review mode ----
+  function lonlatOf(c){var X=META.xmin+c[0]*META.res,Y=META.ymax-c[1]*META.res;return [X/20037508.342789*180, Math.atan(Math.exp(Y/6378137))*360/Math.PI-90];}
+  function title(s){return s?String(s).toLowerCase().replace(/\b\w/g,function(c){return c.toUpperCase();}):'';}
+  function updateCount(){document.getElementById('revcount').textContent=Object.keys(corr).length+' building(s) reviewed, '+missing.length+' missing building(s) added (saved in this browser).';}
+  function renderForm(b){
+    if(!opt.review) return; var box=document.getElementById('revform'); var c=corr[b.id]||{};
+    box.innerHTML='<div><b>#'+b.id+'</b> draft: '+(b.n?esc(b.n):'no number')+' '+esc(title(b.st))+'</div>'+
+      '<div>House number <input type="text" id="rnum" value="'+esc(c.num!=null?c.num:(b.n||''))+'" style="width:80px"></div>'+
+      '<div>Street <input type="text" id="rst" value="'+esc(c.street!=null?c.street:title(b.st))+'" style="width:150px"></div>'+
+      '<div>Verdict <select id="rstat"><option value="right">Right as drawn</option><option value="fixed">Fixed (number or street changed)</option><option value="wrong">Not a building / outline wrong</option><option value="unsure">Not sure</option></select></div>'+
+      '<div>Note <input type="text" id="rnote" value="'+esc(c.note||'')+'" style="width:190px"></div>'+
+      '<div style="margin-top:6px"><button id="rsave">Save this building</button> <button id="rundo">Remove my review</button></div>';
+    document.getElementById('rstat').value=c.status||'right';
+    document.getElementById('rsave').onclick=function(){
+      var num=document.getElementById('rnum').value.trim(), st=document.getElementById('rst').value.trim(), status=document.getElementById('rstat').value;
+      if(status==='right' && (num!==(b.n||'') || st!==title(b.st))) status='fixed';
+      corr[b.id]={num:num,street:st,status:status,note:document.getElementById('rnote').value.trim(),by:(document.getElementById('revname').value||'').trim(),t:new Date().toISOString().slice(0,16)};
+      persist(); updateCount(); draw(); showDraft(b); box.insertAdjacentHTML('beforeend','<div class="muted">Saved.</div>');};
+    document.getElementById('rundo').onclick=function(){delete corr[b.id]; persist(); updateCount(); draw(); showDraft(b);};
+  }
+  function addMissing(m){
+    addMode=false; cv.style.cursor=''; document.getElementById('addmiss').textContent='Add a missing building (click map)';
+    var num=window.prompt('House number of the missing building (leave empty if unknown):',''); if(num===null){draw();return;}
+    var st=window.prompt('Street (leave empty if unknown):',''); if(st===null){draw();return;}
+    var note=window.prompt('Note (optional):','')||'';
+    missing.push({c:[m[0],m[1]],num:num.trim(),street:st.trim(),note:note.trim(),by:(document.getElementById('revname').value||'').trim(),t:new Date().toISOString().slice(0,16)});
+    persist(); updateCount(); draw();
+  }
+  function csvq(v){v=String(v==null?'':v); return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;}
+  function exportCsv(){
+    var rows=[['id','lon','lat','draft_number','draft_street','corrected_number','corrected_street','verdict','note','reviewer','saved_at']];
+    DRAFT.forEach(function(b){var c=corr[b.id]; if(!c) return; var ll=lonlatOf(b.c); rows.push([b.id,ll[0].toFixed(7),ll[1].toFixed(7),b.n,title(b.st),c.num,c.street,c.status,c.note,c.by,c.t]);});
+    missing.forEach(function(m,i){var ll=lonlatOf(m.c); rows.push(['new-'+(i+1),ll[0].toFixed(7),ll[1].toFixed(7),'','',m.num,m.street,'missing building',m.note,m.by,m.t]);});
+    var txt=rows.map(function(r){return r.map(csvq).join(',');}).join('\r\n');
+    var a=document.createElement('a'); a.href=URL.createObjectURL(new Blob(['﻿'+txt],{type:'text/csv'})); a.download='hamtramck_corrections_'+new Date().toISOString().slice(0,10)+'.csv'; document.body.appendChild(a); a.click(); setTimeout(function(){document.body.removeChild(a);},500);
+  }
+  document.getElementById('lrev').onchange=function(){opt.review=this.checked; document.getElementById('revbox').style.display=this.checked?'block':'none'; if(this.checked&&sel) renderForm(sel);};
+  document.getElementById('addmiss').onclick=function(){addMode=!addMode; cv.style.cursor=addMode?'crosshair':''; this.textContent=addMode?'Click the map where it is (click here to cancel)':'Add a missing building (click map)';};
+  document.getElementById('revundo').onclick=function(){missing.pop(); persist(); updateCount(); draw();};
+  document.getElementById('revexp').onclick=exportCsv;
+  document.getElementById('revclr').onclick=function(){ if(window.confirm('Delete all your saved reviews and added buildings from this browser?')){corr={};missing=[];persist();updateCount();draw();} };
+  document.getElementById('revname').value=(function(){try{return localStorage.getItem(KEY+'_name')||'';}catch(e){return '';}})();
+  document.getElementById('revname').onchange=function(){try{localStorage.setItem(KEY+'_name',this.value);}catch(e){}};
+  updateCount();
   window.addEventListener('resize',resize); legend(); resize(); var w1=WINS[0]; fit(w1.x,w1.y,w1.w,w1.h);})();
 </script>
 </body>
